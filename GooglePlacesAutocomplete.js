@@ -130,6 +130,7 @@ export default class GooglePlacesAutocomplete extends Component {
 
   componentWillReceiveProps(nextProps) {
     let listViewDisplayed = true;
+    const alwaysVisibleList = nextProps.alwaysVisibleList != undefined ? nextProps.alwaysVisibleList : this.props.alwaysVisibleList;
 
     if (nextProps.listViewDisplayed !== 'auto') {
       listViewDisplayed = nextProps.listViewDisplayed;
@@ -137,12 +138,12 @@ export default class GooglePlacesAutocomplete extends Component {
 
     if (typeof (nextProps.text) !== "undefined" && this.state.text !== nextProps.text) {
       this.setState({
-          listViewDisplayed: listViewDisplayed
+        listViewDisplayed: listViewDisplayed && (alwaysVisibleList|| this.state.dataSource.length > 0)
         },
         this._handleChangeText(nextProps.text));
     } else {
       this.setState({
-        listViewDisplayed: listViewDisplayed
+        listViewDisplayed: listViewDisplayed && (alwaysVisibleList|| this.state.dataSource.length > 0)
       });
     }
   }
@@ -283,6 +284,7 @@ export default class GooglePlacesAutocomplete extends Component {
         key: this.props.query.key,
         placeid: rowData.place_id,
         language: this.props.query.language,
+        ...this.props.GooglePlacesDetailsQuery,
       }));
 
       if (this.props.query.origin !== null) {
@@ -323,6 +325,8 @@ export default class GooglePlacesAutocomplete extends Component {
         rows[i].isLoading = true;
         this.setState({
           dataSource: rows,
+        },function(){
+          this.props.onChangeDataSource(this.state.dataSource);
         });
         break;
       }
@@ -407,6 +411,8 @@ export default class GooglePlacesAutocomplete extends Component {
 
               this.setState({
                 dataSource: this.buildRowsFromResults(results),
+              },function(){
+                this.props.onChangeDataSource(this.state.dataSource);
               });
             }
           }
@@ -444,6 +450,8 @@ export default class GooglePlacesAutocomplete extends Component {
       this._results = [];
       this.setState({
         dataSource: this.buildRowsFromResults([]),
+      },function(){
+        this.props.onChangeDataSource(this.state.dataSource);
       });
     }
   }
@@ -471,6 +479,8 @@ export default class GooglePlacesAutocomplete extends Component {
               this._results = results;
               this.setState({
                 dataSource: this.buildRowsFromResults(results),
+              },function(){
+                this.props.onChangeDataSource(this.state.dataSource);
               });
             }
           }
@@ -491,6 +501,8 @@ export default class GooglePlacesAutocomplete extends Component {
       this._results = [];
       this.setState({
         dataSource: this.buildRowsFromResults([]),
+      },function(){
+        this.props.onChangeDataSource(this.state.dataSource);
       });
     }
   }
@@ -500,7 +512,7 @@ export default class GooglePlacesAutocomplete extends Component {
 
     this.setState({
       text: text,
-      listViewDisplayed: this._isMounted || this.props.autoFocus,
+      listViewDisplayed: (this._isMounted || this.props.autoFocus) && (this.props.alwaysVisibleList || this.state.dataSource.length > 0)
     });
   }
 
@@ -602,7 +614,7 @@ export default class GooglePlacesAutocomplete extends Component {
     });
   }
 
-  _onFocus = () => this.setState({ listViewDisplayed: true })
+  _onFocus = () => this.setState({ listViewDisplayed: this.props.alwaysVisibleList || this.state.dataSource.length > 0 })
 
   _renderPoweredLogo = () => {
     if (!this._shouldShowPoweredLogo()) {
@@ -718,6 +730,8 @@ GooglePlacesAutocomplete.propTypes = {
   placeholderTextColor: PropTypes.string,
   underlineColorAndroid: PropTypes.string,
   returnKeyType: PropTypes.string,
+  alwaysVisibleList: PropTypes.bool,
+  onChangeDataSource: PropTypes.func,
   onPress: PropTypes.func,
   onNotFound: PropTypes.func,
   onFail: PropTypes.func,
@@ -731,6 +745,7 @@ GooglePlacesAutocomplete.propTypes = {
   query: PropTypes.object,
   GoogleReverseGeocodingQuery: PropTypes.object,
   GooglePlacesSearchQuery: PropTypes.object,
+  GooglePlacesDetailsQuery: PropTypes.object,
   styles: PropTypes.object,
   textInputProps: PropTypes.object,
   enablePoweredByContainer: PropTypes.bool,
@@ -762,6 +777,8 @@ GooglePlacesAutocomplete.defaultProps = {
   isRowScrollable: true,
   underlineColorAndroid: 'transparent',
   returnKeyType: 'default',
+  alwaysVisibleList: true,
+  onChangeDataSource: () => {},
   onPress: () => {},
   onNotFound: () => {},
   onFail: () => {},
@@ -783,6 +800,7 @@ GooglePlacesAutocomplete.defaultProps = {
     rankby: 'distance',
     types: 'food',
   },
+  GooglePlacesDetailsQuery: {},
   styles: {},
   textInputProps: {},
   enablePoweredByContainer: true,
